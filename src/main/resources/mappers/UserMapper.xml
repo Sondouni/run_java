@@ -5,4 +5,28 @@
         select * from user
     </select>
 
+    <select id="getUserCd" resultType="int">
+        select user_pk from user where user_nm = #{nickName}
+    </select>
+
+    <insert id="insertRun" useGeneratedKeys="true" keyProperty="run_pk">
+        insert into user_run
+        (user_pk,reg_dt,userShow)
+        values
+        (#{user_pk},now(),#{userShow})
+    </insert>
+
+    <insert id="insertHistory">
+        insert into run_history
+            (run_pk,reg_dt,latitude,longitude)
+        values
+            (#{run_pk},now(),#{latitude},#{longitude})
+    </insert>
+
+    <insert id="insertUser">
+        insert into user
+        (user_nm)
+        values
+        (#{user_nm})
+    </insert>
 </mapper>

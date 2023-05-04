@@ -11,4 +11,9 @@ import java.util.Objects;
 public interface UserMapper {
 
     public List<HashMap<String, Object>> getUserList();
+
+    public int getUserCd(String nickName);
+    public int insertRun(HashMap<String,Object> paramMap);
+    public int insertHistory(HashMap<String,Object> paramMap);
+    public int insertUser(HashMap<String,Object> paramMap);
 }

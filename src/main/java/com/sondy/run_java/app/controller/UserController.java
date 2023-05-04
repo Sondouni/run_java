@@ -2,9 +2,7 @@ package com.sondy.run_java.app.controller;
 
 import com.sondy.run_java.app.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Objects;
@@ -21,6 +19,17 @@ public class UserController {
         HashMap<String,Object> result = new HashMap<>();
 
         result = userService.getUserList();
+
+        return result;
+    }
+
+    @PostMapping()
+    public HashMap<String, Object> insertUser (@RequestBody HashMap<String,Object> paramMap) {
+        HashMap<String,Object> result = new HashMap<>();
+        System.out.println(paramMap.toString());
+        System.out.println(paramMap.toString());
+        System.out.println(paramMap.toString());
+        result.put("result",userService.insertUser(paramMap));
 
         return result;
     }
