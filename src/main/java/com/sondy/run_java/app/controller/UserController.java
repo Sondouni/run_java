@@ -33,4 +33,14 @@ public class UserController {
 
         return result;
     }
+
+    @GetMapping("/history")
+    public HashMap<String,Object> getUserRunHistory(@RequestParam HashMap<String,Object> paramMap){
+        return userService.getUserRunHistory(paramMap);
+    }
+
+    @GetMapping("/history/detail")
+    public HashMap<String,Object> getUserRunHistoryDetail(@RequestParam HashMap<String,Object> paramMap){
+        return userService.getUserRunHistoryDetail(paramMap);
+    }
 }

@@ -2,31 +2,52 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.sondy.run_java.app.mapper.UserMapper">
     <select id="getUserList" resultType="HashMap">
-        select * from user
+        select *
+        from user
     </select>
 
     <select id="getUserCd" resultType="int">
-        select user_pk from user where user_nm = #{nickName}
+        select user_pk
+        from user
+        where user_nm = #{nickName}
+    </select>
+
+    <select id="getUserRunHistory" resultType="hashmap">
+        select
+            ur.user_pk,
+            ur.run_pk,
+            UNIX_TIMESTAMP(ur.reg_dt)*1000 as reg_dt,
+            ur.userShow,
+            ur.addr,sum(rh.distance) as totalDistance
+        from user_run ur
+                 inner join user u on ur.user_pk = u.user_pk
+                 inner join run_history rh on ur.run_pk = rh.run_pk
+        where u.user_pk = #{user_pk}
+        group by ur.run_pk, ur.reg_dt
+        order by ur.reg_dt desc
+    </select>
+
+    <select id="getUserRunHistoryDetail" resultType="hashmap">
+        select *
+        from run_history
+        where run_pk = #{run_pk}
     </select>
 
     <insert id="insertRun" useGeneratedKeys="true" keyProperty="run_pk">
         insert into user_run
-        (user_pk,reg_dt,userShow)
-        values
-        (#{user_pk},now(),#{userShow})
+            (user_pk, reg_dt, userShow, addr)
+        values (#{user_pk}, now(), #{userShow}, #{addr})
     </insert>
 
     <insert id="insertHistory">
         insert into run_history
-            (run_pk,reg_dt,latitude,longitude)
-        values
-            (#{run_pk},now(),#{latitude},#{longitude})
+            (run_pk, reg_dt, latitude, longitude, distance)
+        values (#{run_pk}, now(), #{latitude}, #{longitude}, #{distance})
     </insert>
 
     <insert id="insertUser">
         insert into user
-        (user_nm)
-        values
-        (#{user_nm})
+            (user_nm)
+        values (#{user_nm})
     </insert>
 </mapper>

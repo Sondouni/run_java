@@ -49,6 +49,8 @@ dependencies {
 	//mySql
 	implementation("mysql:mysql-connector-java:8.0.32")
 
+// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-thymeleaf
+	implementation("org.springframework.boot:spring-boot-starter-thymeleaf:2.7.11")
 
 
 

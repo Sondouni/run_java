@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.sondy.run_java.app.mapper.UserMapper;
 import com.sondy.run_java.app.service.UserService;
 import com.sondy.run_java.global.ServerEndpointConfigurator;
+import com.sondy.run_java.global.utils.getDistance;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,10 +16,11 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
+import java.io.IOException;
 import java.util.*;
 @RequiredArgsConstructor
 @Service
-@ServerEndpoint(value="/socket/{nickName}/{userShow}",configurator = ServerEndpointConfigurator.class)
+@ServerEndpoint(value="/socket/{nickName}/{userShow}/{addr}",configurator = ServerEndpointConfigurator.class)
 public class WebSocketMap {
     private static Set<Session> clients =
             Collections.synchronizedSet(new HashSet<Session>());
@@ -27,8 +29,16 @@ public class WebSocketMap {
 
     private final UserService userService;
 
+    private HashMap<String,Object> userLocaData = new HashMap<>();
+
     @OnOpen
-    public void onOpen(Session s, @PathParam("nickName") String nickName, @PathParam("userShow") String userShow) {
+    public void onOpen(
+            Session s,
+            @PathParam("nickName") String nickName,
+            @PathParam("userShow") String userShow,
+            @PathParam("addr") String addr
+
+        ) {
         System.out.println("open session : " + s.toString());
         System.out.println("nickName : " + nickName);
         if(!clients.contains(s)) {
@@ -42,15 +52,13 @@ public class WebSocketMap {
             HashMap<String,Object> user = new HashMap<>();
             user.put("nickName",nickName);
             user.put("userShow",userShow);
+            user.put("addr",addr);
             int runPk = userService.makeRun(user);
             currentUser.put(s,user);
 
         }else {
             System.out.println("이미 달리는 유저");
         }
-
-
-
     }
 
 
@@ -85,33 +93,75 @@ public class WebSocketMap {
             for(Session s : clients) {
                 HashMap<String,Object> otherUser = (HashMap<String, Object>) currentUser.get(s);
                 if("Y".equals(otherUser.get("userShow"))&&s!=session){
-                    System.out.println("send data : " + msg);
-                    s.getBasicRemote().sendText(msg);
+
+                    HashMap<String,Object> aTempMap = (HashMap<String, Object>) userLocaData.get(otherUser.get("nickName"));
+
+                    if(aTempMap!=null){
+                        Double beforeLat = Double.parseDouble((String) aTempMap.get("latitude"));
+                        Double beforeLong = Double.parseDouble((String) aTempMap.get("longitude"));
+                        Double curLat = Double.parseDouble((String) tempMap.get("latitude"));
+                        Double curLong = Double.parseDouble((String) tempMap.get("longitude"));
+                        Double distance = getDistance.distance(beforeLat,beforeLong,curLat,curLong,"kilometer");
+                        if(distance.intValue()<=10){
+                            System.out.println("send data : " + msg);
+                            s.getBasicRemote().sendText(msg);
+                        }
+                    }
                 }
             }
         }
 
+        //마지막 좌표와 거리계산
+        HashMap<String,Object> myMap = (HashMap<String, Object>) userLocaData.get(tempMap.get("nickName"));
+        if(myMap!=null){
+            Double beforeLat = Double.parseDouble((String) myMap.get("latitude"));
+            Double beforeLong = Double.parseDouble((String) myMap.get("longitude"));
+            Double curLat = Double.parseDouble((String) tempMap.get("latitude"));
+            Double curLong = Double.parseDouble((String) tempMap.get("longitude"));
+            Double distance = getDistance.distance(beforeLat,beforeLong,curLat,curLong,"meter");
+            tempMap.put("distance",distance.intValue());
+            userLocaData.put((String) tempMap.get("nickName"),tempMap);
+            session.getBasicRemote().sendText(gson.toJson(tempMap));
+        }else {
+            userLocaData.put((String) tempMap.get("nickName"),tempMap);
+            tempMap.put("distance",0);
+        }
         tempMap.put("run_pk",storedMap.get("run_pk"));
         tempMap.put("user_pk",storedMap.get("user_pk"));
         //DB화
         userService.insertMapHistory(tempMap);
 
-
     }
 
     @OnClose
-    public void onClose(Session s) {
-        System.out.println("session close : " + s);
+    public void onClose(Session session) throws IOException {
+        System.out.println("session close : " + session);
+        HashMap<String,Object> curUser = (HashMap<String, Object>) currentUser.get(session);
+        for(Session s : clients) {
+            HashMap<String,Object> otherUser = (HashMap<String, Object>) currentUser.get(s);
+            if("Y".equals(otherUser.get("userShow"))&&s!=session){
 
-        HashMap<String,Object> userMap = (HashMap<String, Object>) currentUser.get(s);
+                HashMap<String,Object> aTempMap = (HashMap<String, Object>) userLocaData.get(otherUser.get("nickName"));
+                HashMap<String,Object> bTempMap = (HashMap<String, Object>) userLocaData.get(curUser.get("nickName"));
 
-        System.out.println(userMap.toString());
-        System.out.println(userMap.toString());
-        System.out.println(userMap.toString());
-        System.out.println(userMap.toString());
+                if(aTempMap!=null){
+                    Double beforeLat = Double.parseDouble((String) aTempMap.get("latitude"));
+                    Double beforeLong = Double.parseDouble((String) aTempMap.get("longitude"));
+                    Double curLat = Double.parseDouble((String) bTempMap.get("latitude"));
+                    Double curLong = Double.parseDouble((String) bTempMap.get("longitude"));
+                    Double distance = getDistance.distance(beforeLat,beforeLong,curLat,curLong,"kilometer");
+                    if(distance.intValue()<=10){
+                        HashMap<String,Object> msgMap = new HashMap<>();
+                        Gson gson = new Gson();
+                        msgMap.put("nickName",curUser.get("nickName"));
+                        msgMap.put("finishedUser","Y");
+                        s.getBasicRemote().sendText(gson.toJson(msgMap));
+                    }
+                }
+            }
+        }
 
-
-        clients.remove(s);
-        currentUser.remove(s);
+        clients.remove(session);
+        currentUser.remove(session);
     }
 }

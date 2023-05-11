@@ -16,4 +16,7 @@ public interface UserMapper {
     public int insertRun(HashMap<String,Object> paramMap);
     public int insertHistory(HashMap<String,Object> paramMap);
     public int insertUser(HashMap<String,Object> paramMap);
+    public List<HashMap<String,Object>> getUserRunHistory (HashMap<String,Object> paramMap);
+    public List<HashMap<String,Object>> getUserRunHistoryDetail (HashMap<String,Object> paramMap);
+
 }
